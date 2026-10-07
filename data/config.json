@@ -1,0 +1,10 @@
+{
+  "repo": "rbcarelli/catamaran-dashboard",
+  "branch": "main",
+  "repoUrl": "https://github.com/rbcarelli/catamaran-dashboard.git",
+  "dashboardUrl": "https://raw.githubusercontent.com/rbcarelli/catamaran-dashboard/main/index.html",
+  "listingsJsonUrl": "https://raw.githubusercontent.com/rbcarelli/catamaran-dashboard/main/data/listings.json",
+  "pagesUrl": "https://rbcarelli.github.io/catamaran-dashboard/",
+  "feedbackGitPath": "feedback/feedback.json",
+  "listingsGitPath": "data/listings.json"
+}

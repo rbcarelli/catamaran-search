@@ -1,0 +1,13 @@
+{
+  "name": "catamaran-search",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "node scripts/serve.mjs",
+    "start": "node scripts/serve.mjs",
+    "test": "node scripts/parse-dashboard.test.mjs"
+  }
+}

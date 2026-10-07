@@ -1,0 +1,87 @@
+{
+  "updatedAt": "2026-10-07T01:52:42.586Z",
+  "items": [
+    {
+      "at": "2026-10-07T01:39:48.023Z",
+      "boatId": "crowther-35-nahant",
+      "title": "Crowther 35",
+      "builder": "Crowther",
+      "model": "35",
+      "year": null,
+      "action": "note",
+      "note": "Smoke note from the tile dashboard."
+    },
+    {
+      "at": "2026-10-07T01:42:10.802Z",
+      "boatId": "crowther-35-nahant",
+      "title": "Crowther 35",
+      "builder": "Crowther",
+      "model": "35",
+      "year": null,
+      "action": "note",
+      "note": "Smoke note from the tile dashboard."
+    },
+    {
+      "at": "2026-10-07T01:50:42.269Z",
+      "boatId": "outremer-45-2014-strategery-x",
+      "title": "Outremer 45",
+      "builder": "Outremer",
+      "model": "45",
+      "year": 2014,
+      "action": "keep",
+      "note": ""
+    },
+    {
+      "at": "2026-10-07T01:51:39.294Z",
+      "boatId": "outremer-45-2014-strategery-x",
+      "title": "Outremer 45",
+      "builder": "Outremer",
+      "model": "45",
+      "year": 2014,
+      "action": "note",
+      "note": "Good size and layout both interior and exterior. high end of budget, but move to the top of the list if the prices drops."
+    },
+    {
+      "at": "2026-10-07T01:52:42.586Z",
+      "boatId": "crowther-spindrift-1988-stuart",
+      "title": "Crowther Spindrift",
+      "builder": "Crowther",
+      "model": "Spindrift",
+      "year": 1988,
+      "action": "note",
+      "note": "remove for being too stale"
+    }
+  ],
+  "byId": {
+    "crowther-35-nahant": {
+      "at": "2026-10-07T01:42:10.802Z",
+      "boatId": "crowther-35-nahant",
+      "title": "Crowther 35",
+      "builder": "Crowther",
+      "model": "35",
+      "year": null,
+      "action": "note",
+      "note": "Smoke note from the tile dashboard."
+    },
+    "outremer-45-2014-strategery-x": {
+      "at": "2026-10-07T01:51:39.294Z",
+      "boatId": "outremer-45-2014-strategery-x",
+      "title": "Outremer 45",
+      "builder": "Outremer",
+      "model": "45",
+      "year": 2014,
+      "action": "note",
+      "note": "Good size and layout both interior and exterior. high end of budget, but move to the top of the list if the prices drops."
+    },
+    "crowther-spindrift-1988-stuart": {
+      "at": "2026-10-07T01:52:42.586Z",
+      "boatId": "crowther-spindrift-1988-stuart",
+      "title": "Crowther Spindrift",
+      "builder": "Crowther",
+      "model": "Spindrift",
+      "year": 1988,
+      "action": "note",
+      "note": "remove for being too stale"
+    }
+  }
+}

@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Catamaran hunt</title>
+  <style>
+    :root {
+      --ink: #16303a;
+      --muted: #5c7380;
+      --line: #d5e1e8;
+      --paper: #f4f7f8;
+      --card: #ffffff;
+      --sea: #0e4d63;
+      --sea-deep: #083246;
+      --sand: #f3e6cf;
+      --chip: #e7f2f6;
+      --good: #1f8a4c;
+      --warn: #b7791f;
+      --bad: #c0392b;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        radial-gradient(1200px 420px at 10% -10%, #d7ebf3 0%, transparent 60%),
+        var(--paper);
+      font: 16px/1.45 "Segoe UI", Candara, sans-serif;
+    }
+    header, main, footer {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding-left: 16px;
+      padding-right: 16px;
+    }
+    header { padding: 32px 16px 8px; }
+    h1 {
+      margin: 0 0 8px;
+      font-family: Georgia, "Palatino Linotype", serif;
+      font-size: clamp(32px, 5vw, 48px);
+      font-weight: 600;
+      letter-spacing: -0.03em;
+    }
+    .lede, .source { margin: 0; color: var(--muted); }
+    .source { margin-top: 8px; font-size: 14px; }
+    .source a { color: var(--sea); }
+    .stats {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 18px 0 0;
+    }
+    .stat {
+      min-width: 110px;
+      padding: 10px 14px;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+    }
+    .stat b { display: block; font-size: 22px; color: var(--sea-deep); }
+    .stat span { color: var(--muted); font-size: 12px; }
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: end;
+      margin: 18px 0;
+    }
+    label {
+      display: grid;
+      gap: 4px;
+      color: var(--muted);
+      font-size: 13px;
+      flex: 1 1 140px;
+      min-width: 0;
+    }
+    label:first-child { flex: 2 1 220px; }
+    .chk {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 8px;
+      flex: 0 1 auto;
+      min-height: 42px;
+    }
+    input, select, textarea, button { font: inherit; color: var(--ink); }
+    input, select, textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 0 12px;
+      background: white;
+    }
+    input, select { min-height: 42px; }
+    textarea { min-height: 72px; padding: 8px 12px; resize: vertical; }
+    .count {
+      margin-left: auto;
+      color: var(--sea-deep);
+      font-weight: 650;
+      align-self: center;
+    }
+    .section-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 12px;
+      margin: 8px 0 14px;
+    }
+    .section-head h2 {
+      font-family: Georgia, "Palatino Linotype", serif;
+      font-size: 28px;
+    }
+    .section-head .count { margin-left: 0; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 16px;
+      padding-bottom: 28px;
+    }
+    article {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      min-height: 280px;
+      padding: 0 0 16px;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      box-shadow: 0 10px 24px rgb(8 50 70 / 6%);
+      cursor: pointer;
+      text-align: left;
+      overflow: hidden;
+    }
+    article:hover, article:focus-visible {
+      border-color: #9ec3d2;
+      box-shadow: 0 12px 28px rgb(8 50 70 / 12%);
+      outline: none;
+    }
+    article.excluded { opacity: 0.72; }
+    .tile-body { display: flex; flex-direction: column; gap: 10px; padding: 0 16px; flex: 1; }
+    .tile-photo, .tile-photo-missing {
+      width: 100%;
+      height: 180px;
+      object-fit: cover;
+      background:
+        linear-gradient(180deg, #c5dce6 0%, #9ec3d2 100%);
+    }
+    .tile-photo-missing {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--sea-deep);
+      font-size: 13px;
+      font-weight: 650;
+    }
+    .tile-photo-missing[hidden] { display: none !important; }
+    .sold-wrap { overflow-x: auto; padding-bottom: 40px; }
+    table.sold {
+      width: 100%;
+      min-width: 760px;
+      border-collapse: collapse;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      overflow: hidden;
+    }
+    table.sold th, table.sold td {
+      text-align: left;
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--line);
+      font-size: 14px;
+    }
+    table.sold th {
+      background: #eef2f6;
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    table.sold tr:last-child td { border-bottom: 0; }
+    table.sold tbody tr { cursor: pointer; }
+    table.sold tbody tr:hover { background: #f8fbfd; }
+    .num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .top { display: flex; justify-content: space-between; gap: 8px; align-items: start; }
+    .year-chip, .status-chip {
+      padding: 5px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .year-chip { background: var(--sand); }
+    .status-chip { background: var(--chip); color: var(--sea); }
+    .status-chip.stale { background: #fdf2e0; color: var(--warn); }
+    .status-chip.sold, .status-chip.removed { background: #eceff1; color: #555; }
+    .status-chip.uc { background: #fde8e6; color: var(--bad); }
+    .price {
+      margin: 0;
+      color: var(--sea-deep);
+      font-family: Georgia, "Palatino Linotype", serif;
+      font-size: 28px;
+      letter-spacing: -0.03em;
+    }
+    h2, h3 { margin: 0; letter-spacing: -0.02em; }
+    h2 { font-size: 22px; }
+    .model { margin: 2px 0 0; color: var(--muted); font-weight: 650; }
+    .place, .listed, .notes { margin: 0; color: var(--muted); font-size: 14px; }
+    .spark {
+      margin-top: 4px;
+      padding: 8px 8px 4px;
+      background: #f7fbfc;
+      border-radius: 12px;
+    }
+    .spark svg { display: block; width: 100%; height: 64px; }
+    .spark .caption { margin: 4px 2px 0; font-size: 12px; color: var(--muted); }
+    .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+    .chips span {
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: var(--chip);
+      color: var(--sea);
+      font-size: 12px;
+      font-weight: 650;
+    }
+    .chips .keep { background: #e6f4ea; color: var(--good); }
+    .chips .skip, .chips .ignore { background: #eceff1; color: #555; }
+    .chips .watch { background: #fff4c2; color: #7a5d00; }
+    .empty {
+      display: none;
+      padding: 28px;
+      border: 1px dashed var(--line);
+      border-radius: 16px;
+      color: var(--muted);
+    }
+    .status { margin: 0 0 8px; color: var(--sea); font-size: 14px; font-weight: 650; }
+    footer { padding: 8px 16px 40px; color: var(--muted); font-size: 13px; }
+    footer a { color: var(--sea); }
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgb(8 50 70 / 42%);
+      display: none;
+      align-items: start;
+      justify-content: center;
+      padding: 24px 12px;
+      overflow: auto;
+      z-index: 20;
+    }
+    .overlay.open { display: flex; }
+    .sheet {
+      width: min(860px, 100%);
+      margin: 12px auto 40px;
+      background: var(--card);
+      border-radius: 20px;
+      padding: 22px;
+      box-shadow: 0 24px 60px rgb(8 50 70 / 22%);
+    }
+    .sheet-top { display: flex; justify-content: space-between; gap: 12px; align-items: start; }
+    .sheet dl { display: grid; grid-template-columns: 120px 1fr; gap: 6px 12px; margin: 16px 0; }
+    dt { color: var(--muted); }
+    dd { margin: 0; font-weight: 650; }
+    .source-list { display: grid; gap: 0; margin: 8px 0 16px; }
+    .source-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--line);
+    }
+    .listing, .ghost, .feedback button {
+      display: inline-flex;
+      align-items: center;
+      min-height: 36px;
+      padding: 0 12px;
+      border-radius: 999px;
+      font-weight: 650;
+      text-decoration: none;
+      cursor: pointer;
+    }
+    .listing { background: var(--sea); color: white; border: 0; }
+    .ghost, .feedback button, .tile-actions button {
+      border: 1px solid var(--line);
+      background: var(--chip);
+      color: var(--sea);
+    }
+    .feedback { display: grid; gap: 8px; margin-top: 8px; }
+    .feedback-actions, .tile-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+    .tile-actions { margin-top: auto; }
+    .tile-actions button { min-height: 32px; font-size: 13px; }
+    .feedback button:hover, .ghost:hover, .tile-actions button:hover { background: var(--sea); color: white; }
+    .sent { color: var(--sea); font-size: 13px; font-weight: 650; }
+    @media (max-width: 640px) {
+      .toolbar label, .toolbar label:first-child, .count { flex: 1 1 100%; }
+      .count { margin-left: 0; }
+      .price { font-size: 24px; }
+      .sheet dl { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Catamaran hunt</h1>
+    <p class="lede">Listings from the JSON Bob publishes to GitHub. Open a tile for the source ads, then Keep, Skip, Watch, or note. Feedback is compiled to JSON and stored in the same repo.</p>
+    <p class="source" id="meta">Loading listings from git…</p>
+    <div class="stats" id="stats"></div>
+  </header>
+  <main>
+    <p class="status" id="status"></p>
+    <div class="toolbar">
+      <label>Find a boat
+        <input id="query" type="search" placeholder="Make, model, place, or id" autocomplete="off">
+      </label>
+      <label>Status
+        <select id="statusFilter">
+          <option value="active-all">All active</option>
+          <option value="active">Active</option>
+          <option value="under contract">Under contract</option>
+          <option value="stale">Stale</option>
+        </select>
+      </label>
+      <label>Coast
+        <select id="coast"><option value="all">All coasts</option></select>
+      </label>
+      <label>Builder
+        <select id="builder"><option value="all">All builders</option></select>
+      </label>
+      <label>Sort
+        <select id="sort">
+          <option value="price-asc">Lowest price</option>
+          <option value="price-desc">Highest price</option>
+          <option value="year">Newest year</option>
+          <option value="listed">Longest listed</option>
+          <option value="name">Name</option>
+        </select>
+      </label>
+      <label class="chk"><input id="excl" type="checkbox"> Show excluded</label>
+      <div class="count" id="count"></div>
+    </div>
+    <p class="empty" id="empty">No boats to show yet.</p>
+    <div class="section-head">
+      <h2>Active listings</h2>
+      <div class="count" id="activeCount"></div>
+    </div>
+    <section class="grid" id="grid" aria-live="polite"></section>
+    <div class="section-head">
+      <h2>Sold boats</h2>
+      <div class="count" id="soldCount"></div>
+    </div>
+    <div class="sold-wrap">
+      <table class="sold" id="soldTable">
+        <thead>
+          <tr>
+            <th>Make</th>
+            <th>Model</th>
+            <th>Location</th>
+            <th>Days on market</th>
+            <th>Date sold</th>
+            <th>Sale price</th>
+          </tr>
+        </thead>
+        <tbody id="soldBody"></tbody>
+      </table>
+    </div>
+  </main>
+  <footer>
+    <p>Source: <a id="repoLink" href="https://github.com/rbcarelli/catamaran-dashboard">rbcarelli/catamaran-dashboard</a>. Feedback file <code>feedback/feedback.json</code>.</p>
+  </footer>
+  <div class="overlay" id="overlay">
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="detailTitle" id="sheet"></div>
+  </div>
+  <script>
+    const grid = document.getElementById("grid");
+    const soldBody = document.getElementById("soldBody");
+    const query = document.getElementById("query");
+    const statusFilter = document.getElementById("statusFilter");
+    const coast = document.getElementById("coast");
+    const builder = document.getElementById("builder");
+    const sort = document.getElementById("sort");
+    const excl = document.getElementById("excl");
+    const count = document.getElementById("count");
+    const activeCount = document.getElementById("activeCount");
+    const soldCount = document.getElementById("soldCount");
+    const empty = document.getElementById("empty");
+    const meta = document.getElementById("meta");
+    const status = document.getElementById("status");
+    const stats = document.getElementById("stats");
+    const overlay = document.getElementById("overlay");
+    const sheet = document.getElementById("sheet");
+    const repoLink = document.getElementById("repoLink");
+
+    let boats = [];
+    let openId = null;
+
+    function esc(value) {
+      return String(value ?? "").replace(/[&<>"']/g, (c) => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+      }[c]));
+    }
+
+    function money(amount) {
+      if (amount == null || amount === "" || Number.isNaN(Number(amount))) return "Price not listed";
+      return "$" + Math.round(Number(amount)).toLocaleString("en-US");
+    }
+
+    function listedStart(boat) {
+      const posted = (boat.listings || []).map((row) => row && row.posted).filter(Boolean).map((value) => String(value).slice(0, 10)).sort();
+      if (posted.length) return posted[0];
+      if (boat.first) return String(boat.first).slice(0, 10);
+      return null;
+    }
+
+    function formatListedFor(start, now = Date.now()) {
+      if (!start) return "Time listed unknown";
+      const t = Date.parse(start);
+      if (!Number.isFinite(t)) return "Time listed unknown";
+      const days = Math.max(0, Math.floor((now - t) / 86400000));
+      if (days <= 0) return "Listed today";
+      if (days === 1) return "Listed 1 day";
+      if (days < 14) return "Listed " + days + " days";
+      const weeks = Math.round(days / 7);
+      if (days < 60) return "Listed " + weeks + " week" + (weeks === 1 ? "" : "s");
+      const months = Math.round(days / 30.437);
+      if (days < 365) return "Listed " + months + " month" + (months === 1 ? "" : "s");
+      const years = Math.max(1, Math.floor(days / 365.25));
+      const remMonths = Math.round((days - years * 365.25) / 30.437);
+      if (remMonths <= 0) return "Listed " + years + " year" + (years === 1 ? "" : "s");
+      return "Listed " + years + "y " + remMonths + "mo";
+    }
+
+    function primaryUrl(boat) {
+      const live = (boat.listings || []).find((row) => row && row.url && row.status !== "sold" && row.status !== "removed");
+      return (live && live.url) || (boat.listings || []).find((row) => row && row.url)?.url || "";
+    }
+
+    function spark(series, width, height) {
+      const s = Array.isArray(series) ? series.filter((row) => row && row.length >= 2 && Number.isFinite(Number(row[1]))) : [];
+      if (!s.length) return '<div class="spark"><div class="caption">No price history yet</div></div>';
+      const w = width || 240;
+      const h = height || 64;
+      const ps = s.map((row) => Number(row[1]));
+      const times = s.map((row) => Date.parse(row[0]));
+      const t0 = Math.min(...times);
+      const t1 = Math.max(...times);
+      const lo = Math.min(...ps);
+      const hi = Math.max(...ps);
+      const range = hi - lo || 1;
+      const X = (value) => 6 + (w - 12) * (t1 === t0 ? 0.5 : (value - t0) / (t1 - t0));
+      const Y = (value) => h - 8 - (h - 16) * (value - lo) / range;
+      const pts = s.map((row, i) => X(times[i]).toFixed(1) + "," + Y(ps[i]).toFixed(1)).join(" ");
+      const col = ps[ps.length - 1] < ps[0] ? "#1f8a4c" : ps[ps.length - 1] > ps[0] ? "#c0392b" : "#0e4d63";
+      const caption = s.length === 1
+        ? "1 price point"
+        : money(ps[0]) + " → " + money(ps[ps.length - 1]);
+      return '<div class="spark"><svg viewBox="0 0 ' + w + " " + h + '" preserveAspectRatio="none" aria-label="Price history">' +
+        '<polyline fill="none" stroke="' + col + '" stroke-width="2.4" points="' + pts + '"/>' +
+        s.map((row, i) => '<circle cx="' + X(times[i]).toFixed(1) + '" cy="' + Y(ps[i]).toFixed(1) + '" r="3" fill="' + col + '"></circle>').join("") +
+        '</svg><div class="caption">' + esc(caption) + "</div></div>";
+    }
+
+    function heading(boat) {
+      return [boat.builder, boat.model].filter(Boolean).join(" ") || boat.name || boat.id || "Untitled listing";
+    }
+
+    function isSold(boat) {
+      return String(boat.status || "").toLowerCase() === "sold";
+    }
+
+    function isActiveListing(boat) {
+      const status = String(boat.status || "").toLowerCase();
+      return status === "active" || status === "under contract" || status === "stale";
+    }
+
+    function photoMarkup(boat) {
+      const missing = '<div class="tile-photo-missing">Photo not on the listing yet</div>';
+      if (!boat.photoUrl) return missing;
+      return '<img class="tile-photo" src="' + esc(boat.photoUrl) + '" alt="" loading="lazy" onerror="const n=this.nextElementSibling;this.remove();if(n)n.hidden=false">' +
+        '<div class="tile-photo-missing" hidden>Photo not on the listing yet</div>';
+    }
+
+    function textOf(boat) {
+      return [
+        heading(boat), boat.name, boat.year, boat.loc, boat.coast, boat.id, boat.status, boat.notes, boat.details,
+        (boat.listings || []).map((row) => row.site + " " + row.url).join(" ")
+      ].join(" ").toLowerCase();
+    }
+
+    function fillSelect(select, values, allLabel) {
+      const current = select.value;
+      select.innerHTML = '<option value="all">' + esc(allLabel) + "</option>" +
+        values.map((value) => '<option value="' + esc(value) + '">' + esc(value) + "</option>").join("");
+      if ([...select.options].some((option) => option.value === current)) select.value = current;
+    }
+
+    function fillFilters() {
+      fillSelect(coast, [...new Set(boats.map((boat) => boat.coast).filter(Boolean))].sort(), "All coasts");
+      fillSelect(builder, [...new Set(boats.map((boat) => boat.builder).filter(Boolean))].sort(), "All builders");
+    }
+
+    function matchesSearch(boat) {
+      const needle = query.value.trim().toLowerCase();
+      if (!excl.checked && boat.crit === "excluded") return false;
+      if (coast.value !== "all" && boat.coast !== coast.value) return false;
+      if (builder.value !== "all" && boat.builder !== builder.value) return false;
+      if (needle && !textOf(boat).includes(needle)) return false;
+      return true;
+    }
+
+    function filteredActive() {
+      return boats.filter((boat) => {
+        if (!isActiveListing(boat) || !matchesSearch(boat)) return false;
+        if (statusFilter.value === "active-all") return true;
+        return boat.status === statusFilter.value;
+      });
+    }
+
+    function filteredSold() {
+      return boats.filter((boat) => isSold(boat) && matchesSearch(boat));
+    }
+
+    function compare(mode) {
+      const num = (value, missing) => value == null || value === "" ? missing : Number(value);
+      if (mode === "price-desc") return (a, b) => num(b.price, -1) - num(a.price, -1);
+      if (mode === "year") return (a, b) => num(b.year, -1) - num(a.year, -1);
+      if (mode === "listed") {
+        return (a, b) => {
+          const as = Date.parse(listedStart(a) || "") || 0;
+          const bs = Date.parse(listedStart(b) || "") || 0;
+          return as - bs;
+        };
+      }
+      if (mode === "name") return (a, b) => heading(a).localeCompare(heading(b));
+      return (a, b) => num(a.price, Infinity) - num(b.price, Infinity);
+    }
+
+    function tile(boat) {
+      const card = document.createElement("article");
+      card.tabIndex = 0;
+      card.dataset.id = boat.id;
+      if (boat.crit === "excluded") card.classList.add("excluded");
+      const place = boat.loc || "Location not listed";
+      const listed = formatListedFor(listedStart(boat));
+      const statusClass = boat.status === "under contract" ? "uc" : (boat.status || "").replace(/\s+/g, "-");
+      const chips = [
+        boat.feedback ? '<span class="' + esc(boat.feedback) + '">' + esc(boat.feedback) + "</span>" : "",
+        boat.watch ? '<span class="watch">Watch</span>' : "",
+        boat.crit === "excluded" ? "<span>Excluded</span>" : "",
+        boat.drop ? "<span>↓ " + esc(money(boat.drop)) + "</span>" : ""
+      ].filter(Boolean).join("");
+      card.innerHTML =
+        photoMarkup(boat) +
+        '<div class="tile-body"><div class="top"><span class="year-chip">' + esc(boat.year || "Year n/a") + "</span>" +
+        '<span class="status-chip ' + esc(statusClass) + '">' + esc(boat.status || "status n/a") + "</span></div>" +
+        '<p class="price">' + esc(money(boat.price)) + "</p>" +
+        "<div><h2>" + esc(boat.builder || "Make not listed") + "</h2>" +
+        '<p class="model">' + esc(boat.model || "Model not listed") +
+        (boat.name ? " · “" + esc(boat.name) + "”" : "") + "</p></div>" +
+        spark(boat.series) +
+        '<p class="place">' + esc(place) + (boat.coast ? " · " + esc(boat.coast) : "") + "</p>" +
+        '<p class="listed">' + esc(listed) + "</p>" +
+        (chips ? '<div class="chips">' + chips + "</div>" : "") +
+        '<div class="tile-actions">' +
+          '<button type="button" data-action="keep">Keep</button>' +
+          '<button type="button" data-action="skip">Skip</button>' +
+          '<button type="button" data-action="watch">Watch</button>' +
+        "</div></div>";
+      card.querySelector(".tile-actions").addEventListener("click", async (event) => {
+        event.stopPropagation();
+        const button = event.target.closest("button");
+        if (!button) return;
+        await sendFeedback(boat, button.dataset.action, boat.feedbackNote || "");
+      });
+      card.addEventListener("click", () => openBoat(boat.id));
+      card.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          openBoat(boat.id);
+        }
+      });
+      return card;
+    }
+
+    function renderStats(shown) {
+      const live = boats.filter((boat) => boat.crit !== "excluded" && boat.status === "active");
+      const bits = [
+        [boats.length, "in git"],
+        [shown.length, "on this board"],
+        [live.length, "active"],
+        [boats.filter((boat) => boat.feedback === "keep").length, "kept"],
+        [boats.filter((boat) => (boat.series || []).length > 1).length, "with price history"]
+      ];
+      stats.innerHTML = bits.map(([n, label]) => "<div class=\"stat\"><b>" + n + "</b><span>" + label + "</span></div>").join("");
+    }
+
+    function soldRow(boat) {
+      const tr = document.createElement("tr");
+      tr.dataset.id = boat.id;
+      const days = boat.daysOnMarket == null ? "Not listed" : boat.daysOnMarket;
+      const when = boat.soldDate || "Not listed";
+      tr.innerHTML =
+        "<td>" + esc(boat.builder || "Make not listed") + "</td>" +
+        "<td>" + esc(boat.model || "Model not listed") + "</td>" +
+        "<td>" + esc(boat.loc || "Location not listed") + "</td>" +
+        '<td class="num">' + esc(days) + "</td>" +
+        '<td class="num">' + esc(when) + "</td>" +
+        '<td class="num">' + esc(money(boat.price)) + "</td>";
+      tr.addEventListener("click", () => {
+        const href = primaryUrl(boat);
+        if (href) window.open(href, "_blank", "noopener");
+      });
+      return tr;
+    }
+
+    function render() {
+      const active = filteredActive().sort(compare(sort.value));
+      const sold = filteredSold().sort((a, b) => String(b.soldDate || "").localeCompare(String(a.soldDate || "")));
+      grid.replaceChildren(...active.map(tile));
+      soldBody.replaceChildren(...sold.map(soldRow));
+      count.textContent = active.length + " active · " + sold.length + " sold";
+      activeCount.textContent = active.length + " boats";
+      soldCount.textContent = sold.length + " boats";
+      empty.style.display = active.length || sold.length ? "none" : "block";
+      empty.textContent = boats.length ? "No boats match these filters." : "No listings in the git JSON yet.";
+      renderStats(active);
+      if (openId) {
+        const boat = boats.find((row) => row.id === openId);
+        if (boat) renderDetail(boat);
+      }
+    }
+
+    async function refreshPhotos() {
+      try {
+        const map = await (await fetch("/api/photos", { cache: "no-store" })).json();
+        let changed = false;
+        for (const boat of boats) {
+          const url = map[boat.id];
+          if (url && url !== boat.photoUrl) {
+            boat.photoUrl = url;
+            changed = true;
+          }
+        }
+        if (changed) render();
+      } catch {
+        /* keep current photos */
+      }
+    }
+
+    function sourceRows(boat) {
+      const rows = boat.listings || [];
+      if (!rows.length) return "<p class=\"notes\">No source listings on this boat.</p>";
+      return '<div class="source-list">' + rows.map((row) => {
+        const href = row.url ? '<a class="listing" href="' + esc(row.url) + '" target="_blank" rel="noopener">Open listing</a>' : "";
+        const meta = [row.price ? money(row.price) : "", row.status ? row.status + (row.stale ? " (stale)" : "") : "", row.posted ? "posted " + row.posted : "", row.checked ? "checked " + row.checked : ""].filter(Boolean).join(" · ");
+        return '<div class="source-row"><div><b>' + esc(row.site || "listing") + "</b><div class=\"notes\">" + esc(meta) + "</div></div>" + href + "</div>";
+      }).join("") + "</div>";
+    }
+
+    function renderDetail(boat) {
+      const url = primaryUrl(boat);
+      sheet.innerHTML =
+        '<div class="sheet-top"><div><h3 id="detailTitle">' + esc(heading(boat)) + "</h3>" +
+        '<p class="model">' + esc(boat.year || "Year not listed") + " · " + esc(money(boat.price)) + "</p></div>" +
+        '<button class="ghost" type="button" id="closeDetail">Close</button></div>' +
+        spark(boat.series, 760, 90) +
+        "<dl>" +
+          "<dt>Make</dt><dd>" + esc(boat.builder || "not listed") + "</dd>" +
+          "<dt>Model</dt><dd>" + esc(boat.model || "not listed") + "</dd>" +
+          "<dt>Year</dt><dd>" + esc(boat.year || "not listed") + "</dd>" +
+          "<dt>Location</dt><dd>" + esc(boat.loc || "not listed") + (boat.coast ? " · " + esc(boat.coast) : "") + "</dd>" +
+          "<dt>Time listed</dt><dd>" + esc(formatListedFor(listedStart(boat))) + "</dd>" +
+          "<dt>Length</dt><dd>" + esc(boat.len ? boat.len + " ft" : "not listed") + "</dd>" +
+          "<dt>Status</dt><dd>" + esc(boat.status || "not listed") + "</dd>" +
+        "</dl>" +
+        (url ? '<p><a class="listing" href="' + esc(url) + '" target="_blank" rel="noopener">Open source listing</a></p>' : "") +
+        "<h3>Source listings</h3>" + sourceRows(boat) +
+        (boat.notes ? "<p><b>Notes:</b> " + esc(boat.notes) + "</p>" : "") +
+        (boat.details ? '<p class="notes">' + esc(boat.details) + "</p>" : "") +
+        '<form class="feedback">' +
+          '<div class="feedback-actions">' +
+            '<button type="submit" name="action" value="keep">Keep</button>' +
+            '<button type="submit" name="action" value="skip">Skip</button>' +
+            '<button type="submit" name="action" value="watch">Watch</button>' +
+            '<button type="submit" name="action" value="note">Save note</button>' +
+          "</div>" +
+          '<textarea name="note" placeholder="Note stored in feedback/feedback.json">' + esc(boat.feedbackNote || "") + "</textarea>" +
+          '<div class="sent" ' + (boat.feedback ? "" : "hidden") + ">" +
+            (boat.feedback ? "Current feedback: " + esc(boat.feedback) + (boat.feedbackAt ? " · " + esc(String(boat.feedbackAt).slice(0, 16).replace("T", " ")) : "") : "") +
+          "</div></form>";
+      sheet.querySelector("#closeDetail").onclick = closeBoat;
+      const form = sheet.querySelector("form");
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const action = event.submitter ? event.submitter.value : "note";
+        const note = form.note.value.trim();
+        const sent = form.querySelector(".sent");
+        sent.hidden = false;
+        sent.textContent = "Saving…";
+        const message = await sendFeedback(boat, action, note);
+        const live = sheet.querySelector(".sent");
+        if (live) {
+          live.hidden = false;
+          live.textContent = message;
+        }
+      });
+    }
+
+    async function sendFeedback(boat, action, note) {
+      try {
+        const response = await fetch("/api/feedback", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            boatId: boat.id,
+            title: heading(boat),
+            builder: boat.builder,
+            model: boat.model,
+            year: boat.year,
+            action,
+            note
+          })
+        });
+        const data = await response.json();
+        if (!response.ok || !data.ok) return data.error || "Could not save feedback.";
+        const idx = boats.findIndex((row) => row.id === boat.id);
+        if (idx >= 0) {
+          boats[idx] = {
+            ...boats[idx],
+            feedback: action,
+            feedbackNote: note,
+            feedbackAt: data.row && data.row.at,
+            watch: action === "watch" || boats[idx].watch
+          };
+        }
+        render();
+        if (data.published) return "Saved to git as " + action + ".";
+        if (data.publishing) return "Saved. Publishing to git…";
+        return "Saved locally" + (data.publishError ? " · git: " + data.publishError : ".");
+      } catch (error) {
+        return String(error.message || error);
+      }
+    }
+
+    function openBoat(id) {
+      openId = id;
+      location.hash = "boat/" + encodeURIComponent(id);
+      overlay.classList.add("open");
+      const boat = boats.find((row) => row.id === id);
+      if (boat) renderDetail(boat);
+    }
+
+    function closeBoat() {
+      openId = null;
+      overlay.classList.remove("open");
+      if (location.hash) history.replaceState(null, "", location.pathname + location.search);
+    }
+
+    overlay.addEventListener("click", (event) => {
+      if (event.target === overlay) closeBoat();
+    });
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") closeBoat();
+    });
+
+    function applyHash() {
+      const match = location.hash.match(/^#?boat\/(.+)$/);
+      if (match) openBoat(decodeURIComponent(match[1]));
+      else closeBoat();
+    }
+
+    async function load() {
+      try {
+        const response = await fetch("/api/listings", { cache: "no-store" });
+        const data = await response.json();
+        boats = Array.isArray(data.boats) ? data.boats : [];
+        const when = data.built || data.run || data.updatedAt || "unknown time";
+        meta.innerHTML = (data.repo ? '<a href="https://github.com/' + esc(data.repo) + '">' + esc(data.repo) + "</a>" : "git") +
+          " · " + boats.length + " listings · hunt " + esc(when);
+        if (data.pagesUrl) {
+          meta.innerHTML += ' · <a href="' + esc(data.pagesUrl) + '">Bob’s published board</a>';
+        }
+        status.textContent = data.fetchError
+          ? data.fetchError
+          : (data.from === "github-html" || data.from === "github-json"
+            ? "Reading live JSON from GitHub."
+            : "Reading the local listings cache.");
+        if (data.repo) repoLink.href = "https://github.com/" + data.repo;
+        fillFilters();
+      } catch (error) {
+        boats = [];
+        meta.textContent = "Could not reach the local server. Start scripts/serve.mjs.";
+        status.textContent = String(error.message || error);
+        empty.style.display = "block";
+      }
+      render();
+      applyHash();
+      refreshPhotos();
+      setInterval(refreshPhotos, 4000);
+    }
+
+    [query, statusFilter, coast, builder, sort, excl].forEach((el) => {
+      el.addEventListener("input", render);
+      el.addEventListener("change", render);
+    });
+    window.addEventListener("hashchange", applyHash);
+    load();
+  </script>
+</body>
+</html>

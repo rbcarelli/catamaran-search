@@ -1,0 +1,8 @@
+data/github-sync/
+data/bob/
+data/catamarans.json
+.env
+.env.local
+.env*.local
+node_modules/
+.vercel/
