@@ -546,14 +546,14 @@
 
     function filteredActive() {
       return boats.filter((boat) => {
-        if (isRejected(boat) || !isActiveListing(boat) || !matchesSearch(boat)) return false;
+        if (isRejected(boat) || isWatched(boat) || !isActiveListing(boat) || !matchesSearch(boat)) return false;
         if (statusFilter.value === "active-all") return true;
         return boat.status === statusFilter.value;
       });
     }
 
     function filteredSold() {
-      return boats.filter((boat) => isSold(boat) && !isRejected(boat) && matchesSearch(boat));
+      return boats.filter((boat) => isSold(boat) && !isRejected(boat) && !isWatched(boat) && matchesSearch(boat));
     }
 
     function compare(mode) {

@@ -132,7 +132,7 @@
 <body>
   <header>
     <h1>Watched boats</h1>
-    <p class="lede">Boats marked Watch. They stay on the hunt board as well.</p>
+    <p class="lede">Boats marked Watch. They leave the hunt board until you Keep them again.</p>
     <nav class="nav" aria-label="Board">
       <a href="/">Hunt board</a>
       <a class="current" href="/watched">Watched</a>
@@ -242,12 +242,49 @@
           "<td>" + esc(when(boat.feedbackAt)) + "</td>" +
           '<td class="actions">' +
             (href ? '<a class="listing" href="' + esc(href) + '" target="_blank" rel="noopener">Open listing</a>' : "") +
-            '<a class="ghost" href="/#boat/' + encodeURIComponent(boat.id) + '">Hunt tile</a>' +
+            '<button class="ghost" type="button" data-keep>Keep</button>' +
           "</td>";
+        tr.querySelector("[data-keep]").addEventListener("click", async () => {
+          const sent = await sendKeep(boat);
+          status.textContent = sent;
+          if (/^Saved/.test(sent)) {
+            boat.feedback = "keep";
+            boat.watch = false;
+            render();
+          } else {
+            status.classList.add("warn");
+          }
+        });
         return tr;
       }));
       count.textContent = rows.length + " watched";
       empty.style.display = rows.length ? "none" : "block";
+    }
+
+    async function sendKeep(boat) {
+      try {
+        const response = await fetch("/api/feedback", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            boatId: boat.id,
+            title: [boat.builder, boat.model].filter(Boolean).join(" "),
+            builder: boat.builder,
+            model: boat.model,
+            year: boat.year,
+            action: "keep",
+            note: boat.feedbackNote || ""
+          })
+        });
+        const data = await response.json();
+        if (!response.ok || !data.ok || (!data.stored && !data.published)) {
+          return data.error || data.publishError || "Could not save feedback.";
+        }
+        if (data.published) return "Saved to git as keep.";
+        return "Saved locally.";
+      } catch (error) {
+        return String(error.message || error);
+      }
     }
 
     async function load() {
