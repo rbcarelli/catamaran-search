@@ -320,6 +320,7 @@
     <p class="lede">Listings from the JSON Bob publishes to GitHub. Open a tile for the source ads, then Keep, Skip, Watch, or note. Feedback is compiled to JSON and stored in the same repo.</p>
     <nav class="nav" aria-label="Board">
       <a class="current" href="/">Hunt board</a>
+      <a href="/watched">Watched</a>
       <a href="/rejected">Rejected listings</a>
     </nav>
     <p class="source" id="meta">Loading listings from git…</p>
@@ -347,10 +348,11 @@
       </label>
       <label>Sort
         <select id="sort">
+          <option value="listed-new">Newest listed</option>
+          <option value="listed">Oldest listed</option>
           <option value="price-asc">Lowest price</option>
           <option value="price-desc">Highest price</option>
           <option value="year">Newest year</option>
-          <option value="listed">Longest listed</option>
           <option value="name">Name</option>
         </select>
       </label>
@@ -531,6 +533,17 @@
       return /\bremove/i.test(String(boat.feedbackNote || ""));
     }
 
+    function isWatched(boat) {
+      return String(boat.feedback || "").toLowerCase() === "watch" || boat.watch === true;
+    }
+
+    function listingStamp(boat) {
+      const start = listedStart(boat);
+      const posted = Date.parse(start || "") || 0;
+      const last = Date.parse(boat.last || "") || 0;
+      return posted || last;
+    }
+
     function filteredActive() {
       return boats.filter((boat) => {
         if (isRejected(boat) || !isActiveListing(boat) || !matchesSearch(boat)) return false;
@@ -546,16 +559,13 @@
     function compare(mode) {
       const num = (value, missing) => value == null || value === "" ? missing : Number(value);
       if (mode === "price-desc") return (a, b) => num(b.price, -1) - num(a.price, -1);
+      if (mode === "price-asc") return (a, b) => num(a.price, Infinity) - num(b.price, Infinity);
       if (mode === "year") return (a, b) => num(b.year, -1) - num(a.year, -1);
       if (mode === "listed") {
-        return (a, b) => {
-          const as = Date.parse(listedStart(a) || "") || 0;
-          const bs = Date.parse(listedStart(b) || "") || 0;
-          return as - bs;
-        };
+        return (a, b) => listingStamp(a) - listingStamp(b);
       }
       if (mode === "name") return (a, b) => heading(a).localeCompare(heading(b));
-      return (a, b) => num(a.price, Infinity) - num(b.price, Infinity);
+      return (a, b) => listingStamp(b) - listingStamp(a);
     }
 
     function tile(boat) {
@@ -616,6 +626,7 @@
         [shown.length, "on this board"],
         [live.length, "active"],
         [boats.filter((boat) => boat.feedback === "keep").length, "kept"],
+        [boats.filter(isWatched).length, "watched"],
         [boats.filter(isRejected).length, "rejected"],
         [boats.filter((boat) => (boat.series || []).length > 1).length, "with price history"]
       ];
@@ -736,7 +747,9 @@
 
     async function sendFeedback(boat, action, note) {
       try {
-        const savedAction = action === "note" && boat.feedback === "skip" ? "skip" : action;
+        const savedAction = action === "note" && (boat.feedback === "skip" || boat.feedback === "watch")
+          ? boat.feedback
+          : action;
         const response = await fetch("/api/feedback", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -761,7 +774,7 @@
             feedback: savedAction,
             feedbackNote: note,
             feedbackAt: data.row && data.row.at,
-            watch: savedAction === "watch" || boats[idx].watch
+            watch: savedAction === "watch"
           };
         }
         render();
