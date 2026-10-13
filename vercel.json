@@ -2,6 +2,7 @@
   "framework": null,
   "outputDirectory": "public",
   "rewrites": [
-    { "source": "/", "destination": "/index.html" }
+    { "source": "/", "destination": "/index.html" },
+    { "source": "/rejected", "destination": "/rejected.html" }
   ]
 }

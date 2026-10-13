@@ -45,6 +45,19 @@
     .lede, .source { margin: 0; color: var(--muted); }
     .source { margin-top: 8px; font-size: 14px; }
     .source a { color: var(--sea); }
+    .nav { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 0; }
+    .nav a {
+      display: inline-flex;
+      align-items: center;
+      min-height: 34px;
+      padding: 0 12px;
+      border-radius: 999px;
+      background: var(--chip);
+      color: var(--sea);
+      font-weight: 650;
+      text-decoration: none;
+    }
+    .nav a.current { background: var(--sea); color: white; }
     .stats {
       display: flex;
       flex-wrap: wrap;
@@ -305,6 +318,10 @@
   <header>
     <h1>Catamaran hunt</h1>
     <p class="lede">Listings from the JSON Bob publishes to GitHub. Open a tile for the source ads, then Keep, Skip, Watch, or note. Feedback is compiled to JSON and stored in the same repo.</p>
+    <nav class="nav" aria-label="Board">
+      <a class="current" href="/">Hunt board</a>
+      <a href="/rejected">Rejected listings</a>
+    </nav>
     <p class="source" id="meta">Loading listings from git…</p>
     <div class="stats" id="stats"></div>
   </header>
@@ -509,16 +526,20 @@
       return true;
     }
 
+    function isRejected(boat) {
+      return String(boat.feedback || "").toLowerCase() === "skip";
+    }
+
     function filteredActive() {
       return boats.filter((boat) => {
-        if (!isActiveListing(boat) || !matchesSearch(boat)) return false;
+        if (isRejected(boat) || !isActiveListing(boat) || !matchesSearch(boat)) return false;
         if (statusFilter.value === "active-all") return true;
         return boat.status === statusFilter.value;
       });
     }
 
     function filteredSold() {
-      return boats.filter((boat) => isSold(boat) && matchesSearch(boat));
+      return boats.filter((boat) => isSold(boat) && !isRejected(boat) && matchesSearch(boat));
     }
 
     function compare(mode) {
@@ -594,6 +615,7 @@
         [shown.length, "on this board"],
         [live.length, "active"],
         [boats.filter((boat) => boat.feedback === "keep").length, "kept"],
+        [boats.filter((boat) => boat.feedback === "skip").length, "rejected"],
         [boats.filter((boat) => (boat.series || []).length > 1).length, "with price history"]
       ];
       stats.innerHTML = bits.map(([n, label]) => "<div class=\"stat\"><b>" + n + "</b><span>" + label + "</span></div>").join("");
@@ -713,6 +735,7 @@
 
     async function sendFeedback(boat, action, note) {
       try {
+        const savedAction = action === "note" && boat.feedback === "skip" ? "skip" : action;
         const response = await fetch("/api/feedback", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -722,7 +745,7 @@
             builder: boat.builder,
             model: boat.model,
             year: boat.year,
-            action,
+            action: savedAction,
             note
           })
         });
@@ -734,14 +757,14 @@
         if (idx >= 0) {
           boats[idx] = {
             ...boats[idx],
-            feedback: action,
+            feedback: savedAction,
             feedbackNote: note,
             feedbackAt: data.row && data.row.at,
-            watch: action === "watch" || boats[idx].watch
+            watch: savedAction === "watch" || boats[idx].watch
           };
         }
         render();
-        if (data.published) return "Saved to git as " + action + ".";
+        if (data.published) return "Saved to git as " + savedAction + ".";
         if (data.publishing) return "Saved. Publishing to git…";
         return "Saved locally" + (data.publishError ? " · git: " + data.publishError : ".");
       } catch (error) {

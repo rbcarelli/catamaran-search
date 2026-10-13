@@ -4,8 +4,9 @@ Tile dashboard for the listings JSON Bob publishes to
 [rbcarelli/catamaran-dashboard](https://github.com/rbcarelli/catamaran-dashboard).
 
 Active listings are tiles with a photo, make, model, year, price, price history,
-location, and time listed. Sold boats are a table below. Keep / Skip / Watch /
-note compiles into `feedback/feedback.json` in that same git repo.
+location, and time listed. Sold boats are a table below. Skip sends a boat to
+`/rejected` with its note. Keep / Skip / Watch / note compiles into
+`feedback/feedback.json` in that same git repo.
 
 ## Local
 

@@ -102,6 +102,7 @@ const server = http.createServer(async (req, res) => {
 
   let rel = decodeURIComponent(url.pathname);
   if (rel === "/") rel = "/index.html";
+  if (rel === "/rejected" || rel === "/rejected/") rel = "/rejected.html";
   const candidates = [
     path.resolve(PUBLIC, "." + rel.replace(/\\/g, "/")),
     path.resolve(ROOT, "." + rel.replace(/\\/g, "/")),

@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Rejected listings · Catamaran hunt</title>
+  <style>
+    :root {
+      --ink: #16303a;
+      --muted: #5c7380;
+      --line: #d5e1e8;
+      --paper: #f4f7f8;
+      --card: #ffffff;
+      --sea: #0e4d63;
+      --sea-deep: #083246;
+      --sand: #f3e6cf;
+      --chip: #e7f2f6;
+      --bad: #c0392b;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        radial-gradient(1200px 420px at 10% -10%, #d7ebf3 0%, transparent 60%),
+        var(--paper);
+      font: 16px/1.45 "Segoe UI", Candara, sans-serif;
+    }
+    header, main, footer {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding-left: 16px;
+      padding-right: 16px;
+    }
+    header { padding: 32px 16px 8px; }
+    h1 {
+      margin: 0 0 8px;
+      font-family: Georgia, "Palatino Linotype", serif;
+      font-size: clamp(32px, 5vw, 48px);
+      font-weight: 600;
+      letter-spacing: -0.03em;
+    }
+    .lede, .source { margin: 0; color: var(--muted); }
+    .source { margin-top: 8px; font-size: 14px; }
+    .source a, footer a { color: var(--sea); }
+    .nav { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 0; }
+    .nav a {
+      display: inline-flex;
+      align-items: center;
+      min-height: 34px;
+      padding: 0 12px;
+      border-radius: 999px;
+      background: var(--chip);
+      color: var(--sea);
+      font-weight: 650;
+      text-decoration: none;
+    }
+    .nav a.current { background: var(--sea); color: white; }
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: end;
+      margin: 18px 0;
+    }
+    label {
+      display: grid;
+      gap: 4px;
+      color: var(--muted);
+      font-size: 13px;
+      flex: 2 1 240px;
+    }
+    input { font: inherit; color: var(--ink); width: 100%; min-height: 42px; border: 1px solid var(--line); border-radius: 10px; padding: 0 12px; background: white; }
+    .count { margin-left: auto; color: var(--sea-deep); font-weight: 650; align-self: center; }
+    .status { margin: 0 0 8px; color: var(--sea); font-size: 14px; font-weight: 650; }
+    .status.warn { color: var(--bad); }
+    .empty {
+      display: none;
+      padding: 28px;
+      border: 1px dashed var(--line);
+      border-radius: 16px;
+      color: var(--muted);
+    }
+    .wrap { overflow-x: auto; padding-bottom: 40px; }
+    table.rejected {
+      width: 100%;
+      min-width: 860px;
+      border-collapse: collapse;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      overflow: hidden;
+    }
+    table.rejected th, table.rejected td {
+      text-align: left;
+      padding: 12px;
+      border-bottom: 1px solid var(--line);
+      font-size: 14px;
+      vertical-align: top;
+    }
+    table.rejected th {
+      background: #eef2f6;
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    table.rejected tr:last-child td { border-bottom: 0; }
+    .note { max-width: 360px; }
+    .listing, .ghost {
+      display: inline-flex;
+      align-items: center;
+      min-height: 32px;
+      padding: 0 12px;
+      border-radius: 999px;
+      font-weight: 650;
+      text-decoration: none;
+      cursor: pointer;
+      font: inherit;
+    }
+    .listing { background: var(--sea); color: white; border: 0; }
+    .ghost { border: 1px solid var(--line); background: var(--chip); color: var(--sea); }
+    .ghost:hover { background: var(--sea); color: white; }
+    .actions { display: flex; flex-wrap: wrap; gap: 6px; }
+    .muted { color: var(--muted); }
+    footer { padding: 8px 16px 40px; color: var(--muted); font-size: 13px; }
+    @media (max-width: 640px) {
+      .toolbar label, .count { flex: 1 1 100%; }
+      .count { margin-left: 0; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Rejected listings</h1>
+    <p class="lede">Boats marked Skip on the hunt board, with the note saved in <code>feedback/feedback.json</code>.</p>
+    <nav class="nav" aria-label="Board">
+      <a href="/">Hunt board</a>
+      <a class="current" href="/rejected">Rejected listings</a>
+    </nav>
+    <p class="source" id="meta">Loading…</p>
+  </header>
+  <main>
+    <p class="status" id="status"></p>
+    <div class="toolbar">
+      <label>Find a rejected boat
+        <input id="query" type="search" placeholder="Make, model, note, or place" autocomplete="off">
+      </label>
+      <div class="count" id="count"></div>
+    </div>
+    <p class="empty" id="empty">No skipped boats yet. Use Skip on the hunt board.</p>
+    <div class="wrap">
+      <table class="rejected">
+        <thead>
+          <tr>
+            <th>Make</th>
+            <th>Model</th>
+            <th>Year</th>
+            <th>Price</th>
+            <th>Location</th>
+            <th>Note</th>
+            <th>Skipped</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="body"></tbody>
+      </table>
+    </div>
+  </main>
+  <footer>
+    <p>Source: <a href="https://github.com/rbcarelli/catamaran-dashboard">rbcarelli/catamaran-dashboard</a>.</p>
+  </footer>
+  <script>
+    const query = document.getElementById("query");
+    const count = document.getElementById("count");
+    const empty = document.getElementById("empty");
+    const body = document.getElementById("body");
+    const meta = document.getElementById("meta");
+    const status = document.getElementById("status");
+    let boats = [];
+
+    function esc(value) {
+      return String(value ?? "").replace(/[&<>"']/g, (c) => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+      }[c]));
+    }
+
+    function money(amount) {
+      if (amount == null || amount === "" || Number.isNaN(Number(amount))) return "Price not listed";
+      return "$" + Math.round(Number(amount)).toLocaleString("en-US");
+    }
+
+    function primaryUrl(boat) {
+      const live = (boat.listings || []).find((row) => row && row.url);
+      return (live && live.url) || "";
+    }
+
+    function rejected() {
+      const needle = query.value.trim().toLowerCase();
+      return boats.filter((boat) => {
+        if (String(boat.feedback || "").toLowerCase() !== "skip") return false;
+        if (!needle) return true;
+        const blob = [boat.builder, boat.model, boat.name, boat.loc, boat.feedbackNote, boat.id].join(" ").toLowerCase();
+        return blob.includes(needle);
+      }).sort((a, b) => String(b.feedbackAt || "").localeCompare(String(a.feedbackAt || "")));
+    }
+
+    function when(iso) {
+      if (!iso) return "Not listed";
+      return String(iso).slice(0, 16).replace("T", " ");
+    }
+
+    function render() {
+      const rows = rejected();
+      body.replaceChildren(...rows.map((boat) => {
+        const tr = document.createElement("tr");
+        const href = primaryUrl(boat);
+        tr.innerHTML =
+          "<td>" + esc(boat.builder || "Make not listed") + "</td>" +
+          "<td>" + esc(boat.model || "Model not listed") + (boat.name ? "<div class=\"muted\">“" + esc(boat.name) + "”</div>" : "") + "</td>" +
+          "<td>" + esc(boat.year || "n/a") + "</td>" +
+          "<td>" + esc(money(boat.price)) + "</td>" +
+          "<td>" + esc(boat.loc || "Location not listed") + "</td>" +
+          '<td class="note">' + (boat.feedbackNote ? esc(boat.feedbackNote) : '<span class="muted">No note</span>') + "</td>" +
+          "<td>" + esc(when(boat.feedbackAt)) + "</td>" +
+          '<td class="actions">' +
+            (href ? '<a class="listing" href="' + esc(href) + '" target="_blank" rel="noopener">Open listing</a>' : "") +
+            '<button class="ghost" type="button" data-keep>Keep</button>' +
+          "</td>";
+        tr.querySelector("[data-keep]").addEventListener("click", async () => {
+          const sent = await sendKeep(boat);
+          status.textContent = sent;
+          if (/^Saved/.test(sent)) {
+            boat.feedback = "keep";
+            render();
+          } else {
+            status.classList.add("warn");
+          }
+        });
+        return tr;
+      }));
+      count.textContent = rows.length + " rejected";
+      empty.style.display = rows.length ? "none" : "block";
+    }
+
+    async function sendKeep(boat) {
+      try {
+        const response = await fetch("/api/feedback", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            boatId: boat.id,
+            title: [boat.builder, boat.model].filter(Boolean).join(" "),
+            builder: boat.builder,
+            model: boat.model,
+            year: boat.year,
+            action: "keep",
+            note: boat.feedbackNote || ""
+          })
+        });
+        const data = await response.json();
+        if (!response.ok || !data.ok || (!data.stored && !data.published)) {
+          return data.error || data.publishError || "Could not save feedback.";
+        }
+        if (data.published) return "Saved to git as keep.";
+        return "Saved locally.";
+      } catch (error) {
+        return String(error.message || error);
+      }
+    }
+
+    async function load() {
+      try {
+        const response = await fetch("/api/listings", { cache: "no-store" });
+        const data = await response.json();
+        boats = Array.isArray(data.boats) ? data.boats : [];
+        meta.innerHTML = (data.repo ? '<a href="https://github.com/' + esc(data.repo) + '">' + esc(data.repo) + "</a>" : "git") +
+          " · " + boats.filter((boat) => boat.feedback === "skip").length + " skipped";
+        if (data.feedbackWritable === false) {
+          status.classList.add("warn");
+          status.textContent = "Keep will not save until GITHUB_TOKEN is set in Vercel.";
+        }
+      } catch (error) {
+        boats = [];
+        meta.textContent = "Could not load listings.";
+        status.classList.add("warn");
+        status.textContent = String(error.message || error);
+      }
+      render();
+    }
+
+    query.addEventListener("input", render);
+    load();
+  </script>
+</body>
+</html>
