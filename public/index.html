@@ -527,7 +527,8 @@
     }
 
     function isRejected(boat) {
-      return String(boat.feedback || "").toLowerCase() === "skip";
+      if (String(boat.feedback || "").toLowerCase() === "skip") return true;
+      return /\bremove/i.test(String(boat.feedbackNote || ""));
     }
 
     function filteredActive() {
@@ -615,7 +616,7 @@
         [shown.length, "on this board"],
         [live.length, "active"],
         [boats.filter((boat) => boat.feedback === "keep").length, "kept"],
-        [boats.filter((boat) => boat.feedback === "skip").length, "rejected"],
+        [boats.filter(isRejected).length, "rejected"],
         [boats.filter((boat) => (boat.series || []).length > 1).length, "with price history"]
       ];
       stats.innerHTML = bits.map(([n, label]) => "<div class=\"stat\"><b>" + n + "</b><span>" + label + "</span></div>").join("");

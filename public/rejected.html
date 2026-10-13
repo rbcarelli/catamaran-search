@@ -133,7 +133,7 @@
 <body>
   <header>
     <h1>Rejected listings</h1>
-    <p class="lede">Boats marked Skip on the hunt board, with the note saved in <code>feedback/feedback.json</code>.</p>
+    <p class="lede">Boats marked Skip, plus any listing whose note contains “remove”. The full note is shown.</p>
     <nav class="nav" aria-label="Board">
       <a href="/">Hunt board</a>
       <a class="current" href="/rejected">Rejected listings</a>
@@ -148,7 +148,7 @@
       </label>
       <div class="count" id="count"></div>
     </div>
-    <p class="empty" id="empty">No skipped boats yet. Use Skip on the hunt board.</p>
+    <p class="empty" id="empty">No rejected boats yet. Use Skip, or put “remove” in the note.</p>
     <div class="wrap">
       <table class="rejected">
         <thead>
@@ -195,10 +195,15 @@
       return (live && live.url) || "";
     }
 
+    function isRejected(boat) {
+      if (String(boat.feedback || "").toLowerCase() === "skip") return true;
+      return /\bremove/i.test(String(boat.feedbackNote || ""));
+    }
+
     function rejected() {
       const needle = query.value.trim().toLowerCase();
       return boats.filter((boat) => {
-        if (String(boat.feedback || "").toLowerCase() !== "skip") return false;
+        if (!isRejected(boat)) return false;
         if (!needle) return true;
         const blob = [boat.builder, boat.model, boat.name, boat.loc, boat.feedbackNote, boat.id].join(" ").toLowerCase();
         return blob.includes(needle);
@@ -275,7 +280,7 @@
         const data = await response.json();
         boats = Array.isArray(data.boats) ? data.boats : [];
         meta.innerHTML = (data.repo ? '<a href="https://github.com/' + esc(data.repo) + '">' + esc(data.repo) + "</a>" : "git") +
-          " · " + boats.filter((boat) => boat.feedback === "skip").length + " skipped";
+          " · " + boats.filter(isRejected).length + " rejected";
         if (data.feedbackWritable === false) {
           status.classList.add("warn");
           status.textContent = "Keep will not save until GITHUB_TOKEN is set in Vercel.";
