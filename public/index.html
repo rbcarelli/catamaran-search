@@ -58,21 +58,6 @@
       text-decoration: none;
     }
     .nav a.current { background: var(--sea); color: white; }
-    .stats {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin: 18px 0 0;
-    }
-    .stat {
-      min-width: 110px;
-      padding: 10px 14px;
-      background: var(--card);
-      border: 1px solid var(--line);
-      border-radius: 12px;
-    }
-    .stat b { display: block; font-size: 22px; color: var(--sea-deep); }
-    .stat span { color: var(--muted); font-size: 12px; }
     .toolbar {
       display: flex;
       flex-wrap: wrap;
@@ -324,7 +309,6 @@
       <a href="/rejected">Rejected listings</a>
     </nav>
     <p class="source" id="meta">Loading listings from git…</p>
-    <div class="stats" id="stats"></div>
   </header>
   <main>
     <p class="status" id="status"></p>
@@ -345,16 +329,6 @@
       </label>
       <label>Builder
         <select id="builder"><option value="all">All builders</option></select>
-      </label>
-      <label>Sort
-        <select id="sort">
-          <option value="listed-new">Newest listed</option>
-          <option value="listed">Oldest listed</option>
-          <option value="price-asc">Lowest price</option>
-          <option value="price-desc">Highest price</option>
-          <option value="year">Newest year</option>
-          <option value="name">Name</option>
-        </select>
       </label>
       <label class="chk"><input id="excl" type="checkbox"> Show excluded</label>
       <div class="count" id="count"></div>
@@ -398,7 +372,6 @@
     const statusFilter = document.getElementById("statusFilter");
     const coast = document.getElementById("coast");
     const builder = document.getElementById("builder");
-    const sort = document.getElementById("sort");
     const excl = document.getElementById("excl");
     const count = document.getElementById("count");
     const activeCount = document.getElementById("activeCount");
@@ -406,7 +379,6 @@
     const empty = document.getElementById("empty");
     const meta = document.getElementById("meta");
     const status = document.getElementById("status");
-    const stats = document.getElementById("stats");
     const overlay = document.getElementById("overlay");
     const sheet = document.getElementById("sheet");
     const repoLink = document.getElementById("repoLink");
@@ -556,16 +528,8 @@
       return boats.filter((boat) => isSold(boat) && !isRejected(boat) && !isWatched(boat) && matchesSearch(boat));
     }
 
-    function compare(mode) {
-      const num = (value, missing) => value == null || value === "" ? missing : Number(value);
-      if (mode === "price-desc") return (a, b) => num(b.price, -1) - num(a.price, -1);
-      if (mode === "price-asc") return (a, b) => num(a.price, Infinity) - num(b.price, Infinity);
-      if (mode === "year") return (a, b) => num(b.year, -1) - num(a.year, -1);
-      if (mode === "listed") {
-        return (a, b) => listingStamp(a) - listingStamp(b);
-      }
-      if (mode === "name") return (a, b) => heading(a).localeCompare(heading(b));
-      return (a, b) => listingStamp(b) - listingStamp(a);
+    function compareFresh(a, b) {
+      return listingStamp(b) - listingStamp(a);
     }
 
     function tile(boat) {
@@ -619,20 +583,6 @@
       return card;
     }
 
-    function renderStats(shown) {
-      const live = boats.filter((boat) => boat.crit !== "excluded" && boat.status === "active");
-      const bits = [
-        [boats.length, "in git"],
-        [shown.length, "on this board"],
-        [live.length, "active"],
-        [boats.filter((boat) => boat.feedback === "keep").length, "kept"],
-        [boats.filter(isWatched).length, "watched"],
-        [boats.filter(isRejected).length, "rejected"],
-        [boats.filter((boat) => (boat.series || []).length > 1).length, "with price history"]
-      ];
-      stats.innerHTML = bits.map(([n, label]) => "<div class=\"stat\"><b>" + n + "</b><span>" + label + "</span></div>").join("");
-    }
-
     function soldRow(boat) {
       const tr = document.createElement("tr");
       tr.dataset.id = boat.id;
@@ -653,7 +603,7 @@
     }
 
     function render() {
-      const active = filteredActive().sort(compare(sort.value));
+      const active = filteredActive().sort(compareFresh);
       const sold = filteredSold().sort((a, b) => String(b.soldDate || "").localeCompare(String(a.soldDate || "")));
       grid.replaceChildren(...active.map(tile));
       soldBody.replaceChildren(...sold.map(soldRow));
@@ -662,7 +612,6 @@
       soldCount.textContent = sold.length + " boats";
       empty.style.display = active.length || sold.length ? "none" : "block";
       empty.textContent = boats.length ? "No boats match these filters." : "No listings in the git JSON yet.";
-      renderStats(active);
       if (openId) {
         const boat = boats.find((row) => row.id === openId);
         if (boat) renderDetail(boat);
@@ -849,7 +798,7 @@
       setInterval(refreshPhotos, 4000);
     }
 
-    [query, statusFilter, coast, builder, sort, excl].forEach((el) => {
+    [query, statusFilter, coast, builder, excl].forEach((el) => {
       el.addEventListener("input", render);
       el.addEventListener("change", render);
     });
