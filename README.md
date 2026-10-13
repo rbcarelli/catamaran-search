@@ -20,10 +20,10 @@ Open http://127.0.0.1:8787
 This repo is a static `public/` page plus `/api` serverless routes. No build step.
 
 1. Import **this GitHub repo** in Vercel (Framework Preset: Other).
-2. Add environment variable `GITHUB_TOKEN` — a GitHub personal access token with
-   `repo` access to `rbcarelli/catamaran-dashboard`, so Keep/Skip/Watch can write
-   `feedback/feedback.json`.
-3. Deploy.
+2. Add environment variable `GITHUB_TOKEN` (required). Use a GitHub personal
+   access token with `repo` access to `rbcarelli/catamaran-dashboard`. Without
+   this, Keep / Skip / notes appear to click but are not written to git.
+3. Redeploy.
 
 The app reads listings from GitHub on each request and falls back to
 `data/listings.json` in this repo.

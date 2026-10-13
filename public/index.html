@@ -234,6 +234,7 @@
       color: var(--muted);
     }
     .status { margin: 0 0 8px; color: var(--sea); font-size: 14px; font-weight: 650; }
+    .status.warn { color: var(--bad); }
     footer { padding: 8px 16px 40px; color: var(--muted); font-size: 13px; }
     footer a { color: var(--sea); }
     .overlay {
@@ -570,7 +571,11 @@
         event.stopPropagation();
         const button = event.target.closest("button");
         if (!button) return;
-        await sendFeedback(boat, button.dataset.action, boat.feedbackNote || "");
+        const message = await sendFeedback(boat, button.dataset.action, boat.feedbackNote || "");
+        if (message && !/^Saved/.test(message)) {
+          status.classList.add("warn");
+          status.textContent = message;
+        }
       });
       card.addEventListener("click", () => openBoat(boat.id));
       card.addEventListener("keydown", (event) => {
@@ -722,7 +727,9 @@
           })
         });
         const data = await response.json();
-        if (!response.ok || !data.ok) return data.error || "Could not save feedback.";
+        if (!response.ok || !data.ok || (!data.stored && !data.published)) {
+          return data.error || data.publishError || "Could not save feedback.";
+        }
         const idx = boats.findIndex((row) => row.id === boat.id);
         if (idx >= 0) {
           boats[idx] = {
@@ -780,11 +787,17 @@
         if (data.pagesUrl) {
           meta.innerHTML += ' · <a href="' + esc(data.pagesUrl) + '">Bob’s published board</a>';
         }
-        status.textContent = data.fetchError
-          ? data.fetchError
-          : (data.from === "github-html" || data.from === "github-json"
-            ? "Reading live JSON from GitHub."
-            : "Reading the local listings cache.");
+        if (data.feedbackWritable === false) {
+          status.classList.add("warn");
+          status.textContent = "Keep / Skip / notes are not saving. Add GITHUB_TOKEN in Vercel (repo access to rbcarelli/catamaran-dashboard).";
+        } else {
+          status.classList.remove("warn");
+          status.textContent = data.fetchError
+            ? data.fetchError
+            : (data.from === "github-html" || data.from === "github-json"
+              ? "Reading live JSON from GitHub."
+              : "Reading the local listings cache.");
+        }
         if (data.repo) repoLink.href = "https://github.com/" + data.repo;
         fillFilters();
       } catch (error) {

@@ -22,7 +22,7 @@ export default async function handler(req, res) {
   try {
     const payload = await readJsonBody(req);
     const result = await recordFeedback(payload);
-    res.status(result.ok ? 200 : 400).json(result);
+    res.status(result.ok ? 200 : 503).json(result);
   } catch (error) {
     res.status(400).json({ ok: false, error: String(error.message || error) });
   }
