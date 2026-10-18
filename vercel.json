@@ -4,7 +4,7 @@
   "rewrites": [
     { "source": "/", "destination": "/index.html" },
     { "source": "/keep", "destination": "/index.html" },
-    { "source": "/watched", "destination": "/watched.html" },
+    { "source": "/watched", "destination": "/index.html" },
     { "source": "/rejected", "destination": "/rejected.html" }
   ]
 }

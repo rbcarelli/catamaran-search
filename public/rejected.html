@@ -135,10 +135,9 @@
     <h1>Rejected listings</h1>
     <p class="lede">Boats marked Skip, plus any listing whose note contains “remove”. The full note is shown.</p>
     <nav class="nav" aria-label="Board">
-      <a href="/">Hunt board</a>
-      <a href="/keep">Keep</a>
+      <a href="/">New listings</a>
       <a href="/watched">Watched</a>
-      <a class="current" href="/rejected">Rejected listings</a>
+      <a class="current" href="/rejected">Rejected</a>
     </nav>
     <p class="source" id="meta">Loading…</p>
   </header>
@@ -198,6 +197,7 @@
     }
 
     function isRejected(boat) {
+      if (String(boat.feedback || "").toLowerCase() === "watch") return false;
       if (String(boat.feedback || "").toLowerCase() === "skip") return true;
       return /\bremove/i.test(String(boat.feedbackNote || ""));
     }
@@ -232,17 +232,28 @@
           "<td>" + esc(when(boat.feedbackAt)) + "</td>" +
           '<td class="actions">' +
             (href ? '<a class="listing" href="' + esc(href) + '" target="_blank" rel="noopener">Open listing</a>' : "") +
-            '<button class="ghost" type="button" data-keep>Keep</button>' +
+            '<button class="ghost" type="button" data-watch>Watch</button>' +
+            '<button class="ghost" type="button" data-new>New listings</button>' +
           "</td>";
-        tr.querySelector("[data-keep]").addEventListener("click", async () => {
-          const sent = await sendKeep(boat);
+        tr.querySelector("[data-watch]").addEventListener("click", async () => {
+          const sent = await sendAction(boat, "watch", boat.feedbackNote || "");
           status.textContent = sent;
           if (/^Saved/.test(sent)) {
-            boat.feedback = "keep";
+            boat.feedback = "watch";
+            boat.watch = true;
             render();
-          } else {
-            status.classList.add("warn");
-          }
+          } else status.classList.add("warn");
+        });
+        tr.querySelector("[data-new]").addEventListener("click", async () => {
+          const note = String(boat.feedbackNote || "").replace(/\bremove[d]?\b/gi, "").replace(/\s{2,}/g, " ").replace(/^[,;.\s]+|[,;.\s]+$/g, "").trim();
+          const sent = await sendAction(boat, "note", note);
+          status.textContent = sent;
+          if (/^Saved/.test(sent)) {
+            boat.feedback = "note";
+            boat.feedbackNote = note;
+            boat.watch = false;
+            render();
+          } else status.classList.add("warn");
         });
         return tr;
       }));
@@ -250,7 +261,7 @@
       empty.style.display = rows.length ? "none" : "block";
     }
 
-    async function sendKeep(boat) {
+    async function sendAction(boat, action, note) {
       try {
         const response = await fetch("/api/feedback", {
           method: "POST",
@@ -261,15 +272,15 @@
             builder: boat.builder,
             model: boat.model,
             year: boat.year,
-            action: "keep",
-            note: boat.feedbackNote || ""
+            action,
+            note
           })
         });
         const data = await response.json();
         if (!response.ok || !data.ok || (!data.stored && !data.published)) {
           return data.error || data.publishError || "Could not save feedback.";
         }
-        if (data.published) return "Saved to git as keep.";
+        if (data.published) return "Saved to git as " + action + ".";
         return "Saved locally.";
       } catch (error) {
         return String(error.message || error);
@@ -285,7 +296,7 @@
           " · " + boats.filter(isRejected).length + " rejected";
         if (data.feedbackWritable === false) {
           status.classList.add("warn");
-          status.textContent = "Keep will not save until GITHUB_TOKEN is set in Vercel.";
+          status.textContent = "Feedback will not save until GITHUB_TOKEN is set in Vercel.";
         }
       } catch (error) {
         boats = [];

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Catamaran hunt</title>
+  <title>New listings · Catamaran hunt</title>
   <style>
     :root {
       --ink: #16303a;
@@ -302,13 +302,12 @@
 </head>
 <body>
   <header>
-    <h1 id="pageTitle">Catamaran hunt</h1>
-    <p class="lede" id="pageLede">Listings from the JSON Bob publishes to GitHub. Open a tile for the source ads, then Keep, Skip, Watch, or note. Feedback is compiled to JSON and stored in the same repo.</p>
+    <h1 id="pageTitle">New listings</h1>
+    <p class="lede" id="pageLede">Open a tile for the source ads, then Watch, Skip, or note. Watched and rejected boats leave this board.</p>
     <nav class="nav" aria-label="Board">
-      <a id="navHunt" href="/">Hunt board</a>
-      <a id="navKeep" href="/keep">Keep</a>
-      <a href="/watched">Watched</a>
-      <a href="/rejected">Rejected listings</a>
+      <a id="navHunt" href="/">New listings</a>
+      <a id="navWatched" href="/watched">Watched</a>
+      <a href="/rejected">Rejected</a>
     </nav>
     <p class="source" id="meta">Loading listings from git…</p>
   </header>
@@ -384,19 +383,22 @@
     const overlay = document.getElementById("overlay");
     const sheet = document.getElementById("sheet");
     const repoLink = document.getElementById("repoLink");
-    const PAGE = /^\/keep\/?$/.test(location.pathname) ? "keep" : "hunt";
+    const PAGE = /^\/watched\/?$/.test(location.pathname) ? "watched" : "hunt";
 
     let boats = [];
     let openId = null;
 
-    if (PAGE === "keep") {
-      document.title = "Keep · Catamaran hunt";
-      document.getElementById("pageTitle").textContent = "Keep";
-      document.getElementById("pageLede").textContent = "Boats marked Keep, shown as hunt tiles. Watch or Skip moves them off this list.";
-      document.getElementById("navKeep").classList.add("current");
-      document.getElementById("gridTitle").textContent = "Kept boats";
+    if (/^\/keep\/?$/.test(location.pathname)) location.replace("/");
+
+    if (PAGE === "watched") {
+      document.title = "Watched · Catamaran hunt";
+      document.getElementById("pageTitle").textContent = "Watched";
+      document.getElementById("pageLede").textContent = "Boats marked Watch, shown as tiles. Skip sends them to Rejected. New listings sends them back.";
+      document.getElementById("navWatched").classList.add("current");
+      document.getElementById("gridTitle").textContent = "Watched boats";
       document.querySelectorAll(".hunt-only").forEach((el) => { el.hidden = true; });
     } else {
+      document.title = "New listings · Catamaran hunt";
       document.getElementById("navHunt").classList.add("current");
     }
 
@@ -515,16 +517,14 @@
     }
 
     function isRejected(boat) {
+      if (String(boat.feedback || "").toLowerCase() === "watch") return false;
       if (String(boat.feedback || "").toLowerCase() === "skip") return true;
       return /\bremove/i.test(String(boat.feedbackNote || ""));
     }
 
     function isWatched(boat) {
+      if (isRejected(boat) && String(boat.feedback || "").toLowerCase() !== "watch") return false;
       return String(boat.feedback || "").toLowerCase() === "watch" || boat.watch === true;
-    }
-
-    function isKept(boat) {
-      return String(boat.feedback || "").toLowerCase() === "keep";
     }
 
     function listingStamp(boat) {
@@ -535,25 +535,25 @@
     }
 
     function filteredActive() {
-      if (PAGE === "keep") {
-        return boats.filter((boat) => isKept(boat) && matchesKeepSearch(boat));
+      if (PAGE === "watched") {
+        return boats.filter((boat) => isWatched(boat) && matchesSimpleSearch(boat));
       }
       return boats.filter((boat) => {
-        if (isRejected(boat) || isWatched(boat) || isKept(boat) || !isActiveListing(boat) || !matchesSearch(boat)) return false;
+        if (isRejected(boat) || isWatched(boat) || !isActiveListing(boat) || !matchesSearch(boat)) return false;
         if (statusFilter.value === "active-all") return true;
         return boat.status === statusFilter.value;
       });
     }
 
-    function matchesKeepSearch(boat) {
+    function matchesSimpleSearch(boat) {
       const needle = query.value.trim().toLowerCase();
       if (needle && !textOf(boat).includes(needle)) return false;
       return true;
     }
 
     function filteredSold() {
-      if (PAGE === "keep") return [];
-      return boats.filter((boat) => isSold(boat) && !isRejected(boat) && !isWatched(boat) && !isKept(boat) && matchesSearch(boat));
+      if (PAGE === "watched") return [];
+      return boats.filter((boat) => isSold(boat) && !isRejected(boat) && !isWatched(boat) && matchesSearch(boat));
     }
 
     function compareFresh(a, b) {
@@ -587,9 +587,9 @@
         '<p class="listed">' + esc(listed) + "</p>" +
         (chips ? '<div class="chips">' + chips + "</div>" : "") +
         '<div class="tile-actions">' +
-          '<button type="button" data-action="keep">Keep</button>' +
-          '<button type="button" data-action="skip">Skip</button>' +
-          '<button type="button" data-action="watch">Watch</button>' +
+          (PAGE === "watched"
+            ? '<button type="button" data-action="new">New listings</button><button type="button" data-action="skip">Skip</button>'
+            : '<button type="button" data-action="watch">Watch</button><button type="button" data-action="skip">Skip</button>') +
         "</div></div>";
       card.querySelector(".tile-actions").addEventListener("click", async (event) => {
         event.stopPropagation();
@@ -635,17 +635,17 @@
       const sold = filteredSold().sort((a, b) => String(b.soldDate || "").localeCompare(String(a.soldDate || "")));
       grid.replaceChildren(...active.map(tile));
       soldBody.replaceChildren(...sold.map(soldRow));
-      if (PAGE === "keep") {
-        count.textContent = active.length + " kept";
+      if (PAGE === "watched") {
+        count.textContent = active.length + " watched";
         activeCount.textContent = active.length + " boats";
       } else {
-        count.textContent = active.length + " active · " + sold.length + " sold";
+        count.textContent = active.length + " new · " + sold.length + " sold";
         activeCount.textContent = active.length + " boats";
         soldCount.textContent = sold.length + " boats";
       }
       empty.style.display = active.length || sold.length ? "none" : "block";
-      empty.textContent = PAGE === "keep"
-        ? (boats.length ? "No kept boats yet. Use Keep on the hunt board." : "No listings in the git JSON yet.")
+      empty.textContent = PAGE === "watched"
+        ? (boats.length ? "No watched boats yet. Use Watch on New listings." : "No listings in the git JSON yet.")
         : (boats.length ? "No boats match these filters." : "No listings in the git JSON yet.");
       if (openId) {
         const boat = boats.find((row) => row.id === openId);
@@ -702,9 +702,8 @@
         (boat.details ? '<p class="notes">' + esc(boat.details) + "</p>" : "") +
         '<form class="feedback">' +
           '<div class="feedback-actions">' +
-            '<button type="submit" name="action" value="keep">Keep</button>' +
+            (PAGE === "watched" ? '<button type="submit" name="action" value="new">New listings</button>' : '<button type="submit" name="action" value="watch">Watch</button>') +
             '<button type="submit" name="action" value="skip">Skip</button>' +
-            '<button type="submit" name="action" value="watch">Watch</button>' +
             '<button type="submit" name="action" value="note">Save note</button>' +
           "</div>" +
           '<textarea name="note" placeholder="Note stored in feedback/feedback.json">' + esc(boat.feedbackNote || "") + "</textarea>" +
@@ -731,9 +730,15 @@
 
     async function sendFeedback(boat, action, note) {
       try {
-        const savedAction = action === "note" && (boat.feedback === "skip" || boat.feedback === "watch" || boat.feedback === "keep")
+        let nextAction = action;
+        let nextNote = note;
+        if (action === "new") {
+          nextAction = "note";
+          nextNote = String(note || "").replace(/\bremove[d]?\b/gi, "").replace(/\s{2,}/g, " ").replace(/^[,;.\s]+|[,;.\s]+$/g, "").trim();
+        }
+        const savedAction = nextAction === "note" && action !== "new" && (boat.feedback === "skip" || boat.feedback === "watch")
           ? boat.feedback
-          : action;
+          : nextAction;
         const response = await fetch("/api/feedback", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -744,7 +749,7 @@
             model: boat.model,
             year: boat.year,
             action: savedAction,
-            note
+            note: nextNote
           })
         });
         const data = await response.json();
@@ -756,7 +761,7 @@
           boats[idx] = {
             ...boats[idx],
             feedback: savedAction,
-            feedbackNote: note,
+            feedbackNote: nextNote,
             feedbackAt: data.row && data.row.at,
             watch: savedAction === "watch"
           };
@@ -810,7 +815,7 @@
         }
         if (data.feedbackWritable === false) {
           status.classList.add("warn");
-          status.textContent = "Keep / Skip / notes are not saving. Add GITHUB_TOKEN in Vercel (repo access to rbcarelli/catamaran-dashboard).";
+          status.textContent = "Watch / Skip / notes are not saving. Add GITHUB_TOKEN in Vercel (repo access to rbcarelli/catamaran-dashboard).";
         } else {
           status.classList.remove("warn");
           status.textContent = data.fetchError

@@ -3,12 +3,10 @@
 Tile dashboard for the listings JSON Bob publishes to
 [rbcarelli/catamaran-dashboard](https://github.com/rbcarelli/catamaran-dashboard).
 
-Active listings are tiles with a photo, make, model, year, price, price history,
-location, and time listed. Sold boats are a table below. Skip sends a boat to `/rejected` with its note. Watch sends a boat to
-`/watched`. Keep sends a boat to `/keep` as hunt-style tiles. Watched and kept
-boats leave the hunt board. Keep / Skip / Watch / note compiles
-into `feedback/feedback.json` in that same git repo. Hunt tiles default to
-newest listed first.
+New listings, Watched, and Rejected are the three boards. New listings and
+Watched use photo tiles. Skip or a note containing “remove” sends a boat to
+`/rejected`. Watch sends a boat to `/watched`. Feedback compiles into
+`feedback/feedback.json` in the listings repo. Tiles default to newest listed first.
 
 ## Local
 
@@ -25,7 +23,7 @@ This repo is a static `public/` page plus `/api` serverless routes. No build ste
 1. Import **this GitHub repo** in Vercel (Framework Preset: Other).
 2. Add environment variable `GITHUB_TOKEN` (required). Use a GitHub personal
    access token with `repo` access to `rbcarelli/catamaran-dashboard`. Without
-   this, Keep / Skip / notes appear to click but are not written to git.
+   this, Watch / Skip / notes appear to click but are not written to git.
 3. Redeploy.
 
 The app reads listings from GitHub on each request and falls back to
