@@ -58,6 +58,7 @@
       text-decoration: none;
     }
     .nav a.current { background: var(--sea); color: white; }
+    .hunt-only[hidden] { display: none !important; }
     .toolbar {
       display: flex;
       flex-wrap: wrap;
@@ -643,7 +644,9 @@
         soldCount.textContent = sold.length + " boats";
       }
       empty.style.display = active.length || sold.length ? "none" : "block";
-      empty.textContent = boats.length ? "No boats match these filters." : "No listings in the git JSON yet.";
+      empty.textContent = PAGE === "keep"
+        ? (boats.length ? "No kept boats yet. Use Keep on the hunt board." : "No listings in the git JSON yet.")
+        : (boats.length ? "No boats match these filters." : "No listings in the git JSON yet.");
       if (openId) {
         const boat = boats.find((row) => row.id === openId);
         if (boat) renderDetail(boat);
