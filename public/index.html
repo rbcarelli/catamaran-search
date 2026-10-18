@@ -180,6 +180,29 @@
     table.sold tr:last-child td { border-bottom: 0; }
     table.sold tbody tr { cursor: pointer; }
     table.sold tbody tr:hover { background: #f8fbfd; }
+    table.sold tbody tr.tracked { background: #f8efe0; }
+    table.sold tbody tr.tracked:hover { background: #f3e6cf; }
+    .tracked-flag {
+      display: inline-block;
+      margin-right: 8px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: var(--sand);
+      color: #7a5d00;
+      font-size: 11px;
+      font-weight: 700;
+      vertical-align: middle;
+    }
+    article.sold-watch { box-shadow: 0 0 0 3px #e8c56b; }
+    .sold-banner {
+      margin: 0;
+      padding: 8px 10px;
+      border-radius: 10px;
+      background: #f8efe0;
+      color: #7a5d00;
+      font-size: 13px;
+      font-weight: 650;
+    }
     .num { font-variant-numeric: tabular-nums; white-space: nowrap; }
     .top { display: flex; justify-content: space-between; gap: 8px; align-items: start; }
     .year-chip, .status-chip {
@@ -523,8 +546,13 @@
     }
 
     function isWatched(boat) {
+      if (String(boat.feedback || "").toLowerCase() === "ack-sold") return false;
       if (isRejected(boat) && String(boat.feedback || "").toLowerCase() !== "watch") return false;
       return String(boat.feedback || "").toLowerCase() === "watch" || boat.watch === true;
+    }
+
+    function wasTracked(boat) {
+      return Boolean(boat.wasWatched) || isWatched(boat) || String(boat.feedback || "") === "ack-sold";
     }
 
     function listingStamp(boat) {
@@ -553,7 +581,7 @@
 
     function filteredSold() {
       if (PAGE === "watched") return [];
-      return boats.filter((boat) => isSold(boat) && !isRejected(boat) && !isWatched(boat) && matchesSearch(boat));
+      return boats.filter((boat) => isSold(boat) && !isRejected(boat) && matchesSearch(boat));
     }
 
     function compareFresh(a, b) {
@@ -565,6 +593,7 @@
       card.tabIndex = 0;
       card.dataset.id = boat.id;
       if (boat.crit === "excluded") card.classList.add("excluded");
+      if (PAGE === "watched" && isSold(boat)) card.classList.add("sold-watch");
       const place = boat.loc || "Location not listed";
       const listed = formatListedFor(listedStart(boat));
       const statusClass = boat.status === "under contract" ? "uc" : (boat.status || "").replace(/\s+/g, "-");
@@ -572,7 +601,8 @@
         boat.feedback ? '<span class="' + esc(boat.feedback) + '">' + esc(boat.feedback) + "</span>" : "",
         boat.watch ? '<span class="watch">Watch</span>' : "",
         boat.crit === "excluded" ? "<span>Excluded</span>" : "",
-        boat.drop ? "<span>↓ " + esc(money(boat.drop)) + "</span>" : ""
+        boat.drop ? "<span>↓ " + esc(money(boat.drop)) + "</span>" : "",
+        PAGE === "watched" && isSold(boat) ? '<span class="watch">Sold</span>' : ""
       ].filter(Boolean).join("");
       card.innerHTML =
         photoMarkup(boat) +
@@ -585,11 +615,14 @@
         spark(boat.series) +
         '<p class="place">' + esc(place) + (boat.coast ? " · " + esc(boat.coast) : "") + "</p>" +
         '<p class="listed">' + esc(listed) + "</p>" +
+        (PAGE === "watched" && isSold(boat) ? '<p class="sold-banner">This listing sold. Acknowledge sold to remove it from Watched.</p>' : "") +
         (chips ? '<div class="chips">' + chips + "</div>" : "") +
         '<div class="tile-actions">' +
-          (PAGE === "watched"
-            ? '<button type="button" data-action="new">New listings</button><button type="button" data-action="skip">Skip</button>'
-            : '<button type="button" data-action="watch">Watch</button><button type="button" data-action="skip">Skip</button>') +
+          (PAGE === "watched" && isSold(boat)
+            ? '<button type="button" class="listing" data-action="ack-sold">Acknowledge sold</button>'
+            : PAGE === "watched"
+              ? '<button type="button" data-action="new">New listings</button><button type="button" data-action="skip">Skip</button>'
+              : '<button type="button" data-action="watch">Watch</button><button type="button" data-action="skip">Skip</button>') +
         "</div></div>";
       card.querySelector(".tile-actions").addEventListener("click", async (event) => {
         event.stopPropagation();
@@ -614,10 +647,12 @@
     function soldRow(boat) {
       const tr = document.createElement("tr");
       tr.dataset.id = boat.id;
+      if (wasTracked(boat)) tr.classList.add("tracked");
       const days = boat.daysOnMarket == null ? "Not listed" : boat.daysOnMarket;
       const when = boat.soldDate || "Not listed";
+      const flag = wasTracked(boat) ? '<span class="tracked-flag">Watched</span>' : "";
       tr.innerHTML =
-        "<td>" + esc(boat.builder || "Make not listed") + "</td>" +
+        "<td>" + flag + esc(boat.builder || "Make not listed") + "</td>" +
         "<td>" + esc(boat.model || "Model not listed") + "</td>" +
         "<td>" + esc(boat.loc || "Location not listed") + "</td>" +
         '<td class="num">' + esc(days) + "</td>" +
@@ -632,7 +667,11 @@
 
     function render() {
       const active = filteredActive().sort(compareFresh);
-      const sold = filteredSold().sort((a, b) => String(b.soldDate || "").localeCompare(String(a.soldDate || "")));
+      const sold = filteredSold().sort((a, b) => {
+        const tracked = Number(wasTracked(b)) - Number(wasTracked(a));
+        if (tracked) return tracked;
+        return String(b.soldDate || "").localeCompare(String(a.soldDate || ""));
+      });
       grid.replaceChildren(...active.map(tile));
       soldBody.replaceChildren(...sold.map(soldRow));
       if (PAGE === "watched") {
@@ -702,6 +741,7 @@
         (boat.details ? '<p class="notes">' + esc(boat.details) + "</p>" : "") +
         '<form class="feedback">' +
           '<div class="feedback-actions">' +
+            (PAGE === "watched" && isSold(boat) ? '<button type="submit" name="action" value="ack-sold">Acknowledge sold</button>' : "") +
             (PAGE === "watched" ? '<button type="submit" name="action" value="new">New listings</button>' : '<button type="submit" name="action" value="watch">Watch</button>') +
             '<button type="submit" name="action" value="skip">Skip</button>' +
             '<button type="submit" name="action" value="note">Save note</button>' +
@@ -763,10 +803,12 @@
             feedback: savedAction,
             feedbackNote: nextNote,
             feedbackAt: data.row && data.row.at,
-            watch: savedAction === "watch"
+            watch: savedAction === "watch",
+            wasWatched: boats[idx].wasWatched || savedAction === "watch" || savedAction === "ack-sold"
           };
         }
         render();
+        if (savedAction === "ack-sold") return data.published ? "Acknowledged sold." : "Acknowledged sold locally.";
         if (data.published) return "Saved to git as " + savedAction + ".";
         if (data.publishing) return "Saved. Publishing to git…";
         return "Saved locally" + (data.publishError ? " · git: " + data.publishError : ".");

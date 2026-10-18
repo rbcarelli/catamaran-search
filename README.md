@@ -5,8 +5,10 @@ Tile dashboard for the listings JSON Bob publishes to
 
 New listings, Watched, and Rejected are the three boards. New listings and
 Watched use photo tiles. Skip or a note containing “remove” sends a boat to
-`/rejected`. Watch sends a boat to `/watched`. Feedback compiles into
-`feedback/feedback.json` in the listings repo. Tiles default to newest listed first.
+`/rejected`. Watch sends a boat to `/watched`. A watched boat that sells stays
+on Watched until you Acknowledge sold; it also appears highlighted in the sold
+table. Feedback compiles into `feedback/feedback.json` in the listings repo.
+Tiles default to newest listed first.
 
 ## Local
 

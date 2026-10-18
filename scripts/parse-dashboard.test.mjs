@@ -30,6 +30,8 @@ const store = addFeedback(readFeedbackStore(""), {
 assert.equal(store.row.action, "keep");
 assert.equal(store.store.byId["lagoon-42"].note, "survey next");
 assert.equal(store.store.items.length, 1);
+const acked = addFeedback(store.store, { boatId: "lagoon-42", action: "ack-sold", note: "sold, done" });
+assert.equal(acked.row.action, "ack-sold");
 
 assert.equal(
   soldDate({ details: "sold; last asking price shown on JC; sold date not shown; JC page published 2019-06-08" }),
