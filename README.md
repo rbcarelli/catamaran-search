@@ -5,7 +5,8 @@ Tile dashboard for the listings JSON Bob publishes to
 
 Active listings are tiles with a photo, make, model, year, price, price history,
 location, and time listed. Sold boats are a table below. Skip sends a boat to `/rejected` with its note. Watch sends a boat to
-`/watched` and takes it off the hunt board. Keep / Skip / Watch / note compiles
+`/watched`. Keep sends a boat to `/keep` as hunt-style tiles. Watched and kept
+boats leave the hunt board. Keep / Skip / Watch / note compiles
 into `feedback/feedback.json` in that same git repo. Hunt tiles default to
 newest listed first.
 

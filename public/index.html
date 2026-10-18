@@ -301,10 +301,11 @@
 </head>
 <body>
   <header>
-    <h1>Catamaran hunt</h1>
-    <p class="lede">Listings from the JSON Bob publishes to GitHub. Open a tile for the source ads, then Keep, Skip, Watch, or note. Feedback is compiled to JSON and stored in the same repo.</p>
+    <h1 id="pageTitle">Catamaran hunt</h1>
+    <p class="lede" id="pageLede">Listings from the JSON Bob publishes to GitHub. Open a tile for the source ads, then Keep, Skip, Watch, or note. Feedback is compiled to JSON and stored in the same repo.</p>
     <nav class="nav" aria-label="Board">
-      <a class="current" href="/">Hunt board</a>
+      <a id="navHunt" href="/">Hunt board</a>
+      <a id="navKeep" href="/keep">Keep</a>
       <a href="/watched">Watched</a>
       <a href="/rejected">Rejected listings</a>
     </nav>
@@ -316,7 +317,7 @@
       <label>Find a boat
         <input id="query" type="search" placeholder="Make, model, place, or id" autocomplete="off">
       </label>
-      <label>Status
+      <label class="hunt-only">Status
         <select id="statusFilter">
           <option value="active-all">All active</option>
           <option value="active">Active</option>
@@ -324,26 +325,26 @@
           <option value="stale">Stale</option>
         </select>
       </label>
-      <label>Coast
+      <label class="hunt-only">Coast
         <select id="coast"><option value="all">All coasts</option></select>
       </label>
-      <label>Builder
+      <label class="hunt-only">Builder
         <select id="builder"><option value="all">All builders</option></select>
       </label>
-      <label class="chk"><input id="excl" type="checkbox"> Show excluded</label>
+      <label class="chk hunt-only"><input id="excl" type="checkbox"> Show excluded</label>
       <div class="count" id="count"></div>
     </div>
     <p class="empty" id="empty">No boats to show yet.</p>
     <div class="section-head">
-      <h2>Active listings</h2>
+      <h2 id="gridTitle">Active listings</h2>
       <div class="count" id="activeCount"></div>
     </div>
     <section class="grid" id="grid" aria-live="polite"></section>
-    <div class="section-head">
+    <div class="section-head hunt-only">
       <h2>Sold boats</h2>
       <div class="count" id="soldCount"></div>
     </div>
-    <div class="sold-wrap">
+    <div class="sold-wrap hunt-only">
       <table class="sold" id="soldTable">
         <thead>
           <tr>
@@ -382,9 +383,21 @@
     const overlay = document.getElementById("overlay");
     const sheet = document.getElementById("sheet");
     const repoLink = document.getElementById("repoLink");
+    const PAGE = /^\/keep\/?$/.test(location.pathname) ? "keep" : "hunt";
 
     let boats = [];
     let openId = null;
+
+    if (PAGE === "keep") {
+      document.title = "Keep · Catamaran hunt";
+      document.getElementById("pageTitle").textContent = "Keep";
+      document.getElementById("pageLede").textContent = "Boats marked Keep, shown as hunt tiles. Watch or Skip moves them off this list.";
+      document.getElementById("navKeep").classList.add("current");
+      document.getElementById("gridTitle").textContent = "Kept boats";
+      document.querySelectorAll(".hunt-only").forEach((el) => { el.hidden = true; });
+    } else {
+      document.getElementById("navHunt").classList.add("current");
+    }
 
     function esc(value) {
       return String(value ?? "").replace(/[&<>"']/g, (c) => ({
@@ -509,6 +522,10 @@
       return String(boat.feedback || "").toLowerCase() === "watch" || boat.watch === true;
     }
 
+    function isKept(boat) {
+      return String(boat.feedback || "").toLowerCase() === "keep";
+    }
+
     function listingStamp(boat) {
       const start = listedStart(boat);
       const posted = Date.parse(start || "") || 0;
@@ -517,15 +534,25 @@
     }
 
     function filteredActive() {
+      if (PAGE === "keep") {
+        return boats.filter((boat) => isKept(boat) && matchesKeepSearch(boat));
+      }
       return boats.filter((boat) => {
-        if (isRejected(boat) || isWatched(boat) || !isActiveListing(boat) || !matchesSearch(boat)) return false;
+        if (isRejected(boat) || isWatched(boat) || isKept(boat) || !isActiveListing(boat) || !matchesSearch(boat)) return false;
         if (statusFilter.value === "active-all") return true;
         return boat.status === statusFilter.value;
       });
     }
 
+    function matchesKeepSearch(boat) {
+      const needle = query.value.trim().toLowerCase();
+      if (needle && !textOf(boat).includes(needle)) return false;
+      return true;
+    }
+
     function filteredSold() {
-      return boats.filter((boat) => isSold(boat) && !isRejected(boat) && !isWatched(boat) && matchesSearch(boat));
+      if (PAGE === "keep") return [];
+      return boats.filter((boat) => isSold(boat) && !isRejected(boat) && !isWatched(boat) && !isKept(boat) && matchesSearch(boat));
     }
 
     function compareFresh(a, b) {
@@ -607,9 +634,14 @@
       const sold = filteredSold().sort((a, b) => String(b.soldDate || "").localeCompare(String(a.soldDate || "")));
       grid.replaceChildren(...active.map(tile));
       soldBody.replaceChildren(...sold.map(soldRow));
-      count.textContent = active.length + " active · " + sold.length + " sold";
-      activeCount.textContent = active.length + " boats";
-      soldCount.textContent = sold.length + " boats";
+      if (PAGE === "keep") {
+        count.textContent = active.length + " kept";
+        activeCount.textContent = active.length + " boats";
+      } else {
+        count.textContent = active.length + " active · " + sold.length + " sold";
+        activeCount.textContent = active.length + " boats";
+        soldCount.textContent = sold.length + " boats";
+      }
       empty.style.display = active.length || sold.length ? "none" : "block";
       empty.textContent = boats.length ? "No boats match these filters." : "No listings in the git JSON yet.";
       if (openId) {
@@ -696,7 +728,7 @@
 
     async function sendFeedback(boat, action, note) {
       try {
-        const savedAction = action === "note" && (boat.feedback === "skip" || boat.feedback === "watch")
+        const savedAction = action === "note" && (boat.feedback === "skip" || boat.feedback === "watch" || boat.feedback === "keep")
           ? boat.feedback
           : action;
         const response = await fetch("/api/feedback", {
