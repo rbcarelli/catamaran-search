@@ -507,7 +507,8 @@
     function photoMarkup(boat) {
       const missing = '<div class="tile-photo-missing">Photo not on the listing yet</div>';
       if (!boat.photoUrl) return missing;
-      return '<img class="tile-photo" src="' + esc(boat.photoUrl) + '" alt="" loading="lazy" onerror="const n=this.nextElementSibling;this.remove();if(n)n.hidden=false">' +
+      const id = encodeURIComponent(boat.id);
+      return '<img class="tile-photo" src="' + esc(boat.photoUrl) + '" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="if(!this.dataset.proxied){this.dataset.proxied=1;this.src=\'/api/img?id=' + id + '\';return;}const n=this.nextElementSibling;this.remove();if(n)n.hidden=false">' +
         '<div class="tile-photo-missing" hidden>Photo not on the listing yet</div>';
     }
 
@@ -698,7 +699,7 @@
         let changed = false;
         for (const boat of boats) {
           const url = map[boat.id];
-          if (url && url !== boat.photoUrl) {
+          if (url && !boat.photoUrl) {
             boat.photoUrl = url;
             changed = true;
           }

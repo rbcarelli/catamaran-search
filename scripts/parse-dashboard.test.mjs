@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { addFeedback, daysOnMarket, extractJsonObject, formatListedFor, guessPhotoUrl, parseDashboardPayload, readFeedbackStore, soldDate } from "../lib/parse-dashboard.mjs";
+import { addFeedback, daysOnMarket, extractJsonObject, formatListedFor, guessPhotoUrl, parseDashboardPayload, pickPhotoUrl, readFeedbackStore, soldDate } from "../lib/parse-dashboard.mjs";
 
 const html = `<!doctype html><script>const DATA={"run":"2026-10-06","boats":[{"id":"lagoon-42","builder":"Lagoon","model":"42","year":2018,"price":450000,"first":"2026-10-04","listings":[{"posted":"2025-01-15","url":"https://example.com/a"}]}]};</script>`;
 const fromHtml = parseDashboardPayload(html);
@@ -56,6 +56,14 @@ assert.equal(
 assert.equal(
   guessPhotoUrl({ listings: [{ url: "https://www.sailboatlistings.com/view/93860" }] }),
   "https://www.sailboatlistings.com/sailimg/m/93860/main.jpg",
+);
+assert.equal(
+  pickPhotoUrl({ img: "https://images.boatsgroup.com/resize/1/a.jpg" }, "https://fallback.example/x.jpg"),
+  "https://images.boatsgroup.com/resize/1/a.jpg",
+);
+assert.equal(
+  pickPhotoUrl({ img: "" }, "https://fallback.example/x.jpg"),
+  "https://fallback.example/x.jpg",
 );
 
 console.log("parse-dashboard tests ok");

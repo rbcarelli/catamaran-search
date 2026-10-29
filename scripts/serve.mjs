@@ -2,7 +2,7 @@ import fs from "node:fs";
 import http from "node:http";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { loadBoard, photoMap, recordFeedback } from "../lib/board.mjs";
+import { fetchBoatPhoto, loadBoard, photoMap, recordFeedback } from "../lib/board.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const PORT = Number(process.env.PORT || 8787);
@@ -82,6 +82,25 @@ const server = http.createServer(async (req, res) => {
 
   if (req.method === "GET" && url.pathname === "/api/photos") {
     sendJson(res, 200, photoMap());
+    return;
+  }
+
+  if (req.method === "GET" && url.pathname === "/api/img") {
+    try {
+      const photo = await fetchBoatPhoto(url.searchParams.get("id") || "");
+      if (!photo) {
+        send(res, 404, "not found");
+        return;
+      }
+      res.writeHead(200, {
+        "Content-Type": photo.type,
+        "Cache-Control": "public, max-age=86400",
+        "Access-Control-Allow-Origin": "*",
+      });
+      res.end(photo.body);
+    } catch (error) {
+      sendJson(res, 502, { error: String(error.message || error) });
+    }
     return;
   }
 
